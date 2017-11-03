@@ -1,8 +1,9 @@
 #include<stdio.h>
+#include"matrix.h"
 
 #define N 5
 
-void disassembleLU(double a[N][N], double l[N][N], double u[N][N])
+void disassembleLU(double **a, double **l, double **u)
 {
   int i,k,m;
   double sum;
@@ -25,7 +26,7 @@ void disassembleLU(double a[N][N], double l[N][N], double u[N][N])
   }
 }
 
-void solveMatrix(double L[N][N], double U[N][N], double x[N], double y[N], double b[N])
+void solveMatrix(double **L, double **U, double *x, double *y, double *b)
 {
   int k,m;
   double sum;
@@ -51,54 +52,75 @@ void solveMatrix(double L[N][N], double U[N][N], double x[N], double y[N], doubl
 
 int main(void)
 {
-	double A[N][N] = {{5, 3, -3, 2, 4},
-										{6, 0, -2, 5, -2},
-										{3, -3, 4, -4, 1},
-										{3, -5, 0, 2, 3},
-                    {9, -1, -2, 3, 5}};
+  int i,j;
+  double **A,**L,**U;
+  double *b,*x,*y;
 
-	double b[N] = {30,
-								 10,
-								 -2,
-                 16,
-                 38};
+  A = matrix(N,N);
+  L = matrix(N,N);
+  U = matrix(N,N);
+  b = vector(N);
+  x = vector(N);
+  y = vector(N);
+  
+	A[0][0] = 5; A[0][1] = 3;  A[0][2] = -3; A[0][3] = 2;  A[0][4] = 4;
+  A[1][0] = 6; A[1][1] = 0;  A[1][2] = -2; A[1][3] = 5;  A[1][4] = -2;
+  A[2][0] = 3; A[2][1] = -3; A[2][2] = 4;  A[2][3] = -4; A[2][4] = 1;
+  A[3][0] = 3; A[3][1] = -5; A[3][2] = 0;  A[3][3] = 2;  A[3][4] = 3;
+  A[4][0] = 9; A[4][1] = -1; A[4][2] = -2; A[4][3] = 3;  A[4][4] = 5;
 
-	double L[N][N]={}, U[N][N]={};
-  double x[N] = {}, y[N] = {};
-	int i,j;
+	b[0] = 30;
+  b[1] = 10;
+  b[2] = -2;
+  b[3] = 16;
+  b[4] = 38;
+
+  for(i=0;i<N;i++){
+    for(j=0;j<N;j++){      
+      L[i][j] = 0;
+      U[i][j] = 0;
+    }
+    x[i] = 0;
+    y[i] = 0;
+  }
 
 	disassembleLU(A,L,U);
   solveMatrix(L,U,x,y,b);
 
-  // L U
+  // L
+  printf("L\n");
 	for(i=0;i<N;i++){
 		for(j=0;j<N;j++){
 			printf("%f ", L[i][j]);
 		}
 		printf("\n");
 	}
-	printf("\n");
+  
+  // U
+	printf("U\n");
 	for(i=0;i<N;i++){
 		for(j=0;j<N;j++){
 			printf("%f ", U[i][j]);
 		}
 		printf("\n");
 	}
-  printf("\n");
+  printf("y\n");
 
   // y
   for(i=0;i<N;i++){
     printf("%f", y[i]);
     printf("\n");
   }
-  printf("\n");
+  printf("x\n");
 
   // x
   for(i=0;i<N;i++){
     printf("%f", x[i]);
     printf("\n");
   }
-  printf("\n");
+
+  free(A); free(L); free(U);
+  free(b); free(x); free(y);
   
 	return 0;
 }
