@@ -92,7 +92,14 @@ int main(void)
   B[2][0] = -5; B[2][1] = -3; B[2][2] = 3;
 
 	disassembleLU(A,L,U);
+  
   solveMatrix(L,U,E,Xi,Y);
+  for(i=0;i<N;i++){
+    for(j=0;j<N;j++){
+      Y[i][j] = 0;
+    }
+  }
+  
   solveMatrix(L,U,B,X,Y);
 
   // L

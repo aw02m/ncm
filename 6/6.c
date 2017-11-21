@@ -1,97 +1,104 @@
 #include<stdio.h>
+#include<math.h>
 #include"matrix.h"
 
 #define N 3
+#define LOOP 100
 
-void disassembleLU(double **a, double **l, double **u)
-{
-  int i,k,m;
-  double sum;
-
-  for(k=0;k<N;k++){
-    for(i=k;i<N;i++){
-      // L
-      sum = 0;
-      for(m=0;m<k;m++){
-        sum += l[i][m] * u[m][k];
-      }
-      l[i][k] = a[i][k] - sum;
-      // U
-      sum = 0;
-      for(m=0;m<k;m++){
-        sum += l[k][m] * u[m][i];
-      }
-      u[k][i] = (a[k][i] - sum) / l[k][k];
-    }
-  }
-}
-
-void solveMatrix(double **L, double **U, double **B, double **X, double **Y)
-{
-  int i,k,m;
-  double sum;
-
-  for(i=0;i<N;i++){
-    // 前進代入 (yを求める)
-    for(k=0;k<N;k++){
-      sum = 0;
-      for(m=0;m<=k;m++){
-        sum += L[k][m] * Y[m][i];
-      }
-      Y[k][i] = (B[k][i] - sum) / L[k][k];
-    }
-
-    // 後退代入 (xを求める)
-    for(k=N-1;k>=0;k--){
-      sum = 0;
-      for(m=k;m<N;m++){
-        sum += U[k][m] * X[m][i];
-      }
-      X[k][i] = Y[k][i] - sum;
-    }
-  }
-}
-
-float **jacobi()
+void jacobi(double **A, double **V)
 {
   int i, j;
   int p, q;
-  int end = 0;
+  int loop = 0;
+  double s, c, sc, s2, c2, theta; // sin, cos, sin*cos, sin^2, cos^2, θ
   double max;
+  double **tempA;
+  double **tempV;
+  tempA = matrix(N,N);
+  tempV = matrix(N,N);
 
-  while (end > 0 &&  k < 
+  // copy A to tempA, V to tempV
   for (i = 0; i < N; i++) {
     for (j = 0; j < N; j++) {
-      if (i != j) {
-        if (max < fabs(A[i][j])) {
-          p = i;
-          q = j;
-          max = fabs(A[i][j]);
-        }
-      }
+      tempA[i][j] = A[i][j];
+      tempV[i][j] = V[i][j];
     }
   }
 
-  
+  while(loop < LOOP){
+    max = 0;
+    // search p and q
+    for (i = 0; i < N; i++) {
+      for (j = 0; j < N; j++) {
+        if (i != j) {
+          if (max < fabs(A[i][j])) {
+            p = i;
+            q = j;
+            max = fabs(A[i][j]);
+          }
+        }
+      }
+    }
+
+    theta = (atan(2 * A[p][q] / (A[p][p] - A[q][q]))) / 2;
+
+    s = sin(theta);
+    c = cos(theta);
+    sc = s * c;
+    s2 = pow(s, 2);
+    c2 = pow(c, 2);
+
+    for (j = 0; j < N; j++) {
+      if (j != p && j != q) {
+        tempA[p][j] = A[p][j] * c + A[q][j] * s;
+        tempA[q][j] = -A[p][j] * s + A[q][j] * c;
+      }
+    }
+    
+    for (i = 0; i < N; i++) {
+      if (i != p && i != q) {
+        tempA[i][p] = A[i][p] * c + A[i][q] * s;
+        tempA[i][q] = -A[i][p] * s + A[i][q] * c;
+      }
+      tempV[i][p] = V[i][p] * c + V[i][q] * s;
+      tempV[i][q] = -V[i][p] * s + V[i][q] * c;
+    }
+    
+    tempA[p][p] = A[p][p] * c2 + 2 * A[p][q] * sc + A[q][q] * s2;
+    tempA[p][q] = sc * (A[q][q] - A[p][p]) + (c2 - s2) * A[p][q];
+    tempA[q][p] = tempA[p][q];
+    tempA[q][q] = A[p][p] * s2 - 2 * A[p][q] * sc + A[q][q] * c2;
+
+    // copy tempA to A, tempV to V
+    for (i = 0; i < N; i++) {
+      for (j = 0; j < N; j++) {
+        A[i][j] = tempA[i][j];
+        V[i][j] = tempV[i][j];
+      }
+    }
+    loop++;
+  }
+
+  free(tempA);
+  free(tempV);
 }
 
 int main(void)
 {
   int i,j;
-  double **A, **X, **E;
+  double **A;
+  double **V;
 
-  A = matrix(N,N);
-  X = matrix(N,N);
-  E = matrix(N,N);
+  A = matrix(N, N);
+  V = matrix(N, N);
 
   for(i=0;i<N;i++){
     for(j=0;j<N;j++){
       A[i][j] = 0;
-      X[i][j] = 0;
-      if(i == j){
-        E[i][j] = 1;
-      }else{
-        E[i][j] = 0;
+      if (i != j) {
+        V[i][j] = 0;
+      } else {
+        V[i][j] = 1;
       }
     }
   }
@@ -99,18 +106,29 @@ int main(void)
 	A[0][0] = 2; A[0][1] = 5;  A[0][2] = 7;
   A[1][0] = 5; A[1][1] = 7;  A[1][2] = 9;
   A[2][0] = 7; A[2][1] = 9;  A[2][2] = -3;
+
+  jacobi(A, V);
   
-  // X
+  // A
+  printf("A(k+1)\n");
   for(i=0;i<N;i++){
     for(j=0;j<N;j++){
-      printf("%f ", X[i][j]);
+      printf("%f ", A[i][j]);
+    }
+    printf("\n");
+  }
+
+  // V
+  printf("V(k+1)\n");
+  for(i=0;i<N;i++){
+    for(j=0;j<N;j++){
+      printf("%f ", V[i][j]);
     }
     printf("\n");
   }
 
   free(A);
-  free(X);
-  free(E);
+  free(V);
   
 	return 0;
 }
